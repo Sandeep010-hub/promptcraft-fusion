@@ -1,0 +1,9 @@
+{
+    "compilerOptions": {
+      "lib": ["deno.ns", "dom"],
+      "jsx": "react-jsx",
+      "jsxImportSource": "react"
+    },
+    "importMap": "./functions/import_map.json"
+  }
+  

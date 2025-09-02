@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Wand2, 
   Copy, 
@@ -10,17 +11,22 @@ import {
   RefreshCw,
   BookOpen,
   Lightbulb,
-  Target
+  Target,
+  Save
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export const PromptPerfecterTool = () => {
   const [inputPrompt, setInputPrompt] = useState("");
   const [optimizedPrompt, setOptimizedPrompt] = useState("");
   const [isOptimizing, setIsOptimizing] = useState(false);
+  const [targetModel, setTargetModel] = useState("All");
+  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
-  const handleOptimizePrompt = async () => {
+  const handleGenerate = async () => {
     if (!inputPrompt.trim()) {
       toast({
         title: "Please enter a prompt",
@@ -32,35 +38,112 @@ export const PromptPerfecterTool = () => {
 
     setIsOptimizing(true);
     
-    // Simulate AI optimization (replace with actual AI call)
-    setTimeout(() => {
-      const optimized = `**OPTIMIZED PROMPT:**
+    try {
+      // FIX #1: Get the user session for authentication
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to generate prompts.",
+          variant: "destructive"
+        });
+        setIsOptimizing(false);
+        return;
+      }
 
-Context: ${inputPrompt}
+      // FIX #2: Use backticks (`) for the URL
+      const response = await fetch(`${supabaseUrl}/functions/v1/generate-prompt`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // FIX #3: Add the Authorization header
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          prompt: inputPrompt,
+          targetModel: targetModel
+        })
+      });
 
-Enhanced Version:
-You are an expert AI assistant specialized in [specific domain]. Your task is to provide comprehensive, accurate, and actionable responses.
+      if (!response.ok) {
+        throw new Error('Failed to generate prompt');
+      }
 
-Instructions:
-1. Analyze the user's request thoroughly
-2. Provide step-by-step guidance when applicable
-3. Include relevant examples and best practices
-4. Ensure clarity and precision in your response
+      const data = await response.json();
+      // Assuming the function returns an object with a key for the prompt
+      // Adjust this key based on your actual Edge Function response
+      const resultText = data.gemini || data.chatgpt || data.claude || JSON.stringify(data, null, 2);
+      setOptimizedPrompt(resultText);
 
-Requirements:
-- Be specific and detailed in your explanations
-- Use professional but accessible language
-- Provide actionable insights
-- Consider edge cases and alternatives
-
-Output Format:
-Structure your response with clear headings and bullet points for maximum readability.
-
-Original Request: "${inputPrompt}"`;
-
-      setOptimizedPrompt(optimized);
+    } catch (error) {
+      console.error('Error generating prompt:', error);
+      toast({
+        title: "Generation failed",
+        description: "There was an error generating your prompt. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
       setIsOptimizing(false);
-    }, 2000);
+    }
+  };
+
+  const handleSaveToVault = async () => {
+    if (!optimizedPrompt.trim()) {
+      toast({
+        title: "No prompt to save",
+        description: "Generate a prompt first before saving to vault.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsSaving(true);
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to save prompts to vault.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // FIX #4: Use backticks (`) for the URL
+      const response = await fetch(`${supabaseUrl}/functions/v1/save-prompt`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          originalPrompt: inputPrompt,
+          generatedPrompt: optimizedPrompt,
+          targetModel: targetModel
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save prompt');
+      }
+
+      toast({
+        title: "Saved to Vault!",
+        description: "Your prompt has been successfully saved to the vault.",
+      });
+    } catch (error) {
+      console.error('Error saving prompt:', error);
+      toast({
+        title: "Save failed",
+        description: "There was an error saving your prompt. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const copyToClipboard = (text: string) => {
@@ -113,21 +196,37 @@ Original Request: "${inputPrompt}"`;
               className="min-h-[200px] glass border-glass-border focus:border-primary/50 focus:ring-primary/25"
             />
             
-            <div className="flex gap-2">
+            <div className="space-y-4">
+              {/* Model Selector */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Target AI Model</label>
+                <Select value={targetModel} onValueChange={setTargetModel}>
+                  <SelectTrigger className="glass border-glass-border focus:border-primary/50">
+                    <SelectValue placeholder="Select AI model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="All">All Models (Gemini, ChatGPT, Claude)</SelectItem>
+                    <SelectItem value="Gemini">Gemini</SelectItem>
+                    <SelectItem value="ChatGPT">ChatGPT</SelectItem>
+                    <SelectItem value="Claude">Claude</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
               <Button 
-                onClick={handleOptimizePrompt}
+                onClick={handleGenerate}
                 disabled={isOptimizing || !inputPrompt.trim()}
-                className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground glow-primary-hover"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground glow-primary-hover"
               >
                 {isOptimizing ? (
                   <>
                     <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    Optimizing...
+                    Generating...
                   </>
                 ) : (
                   <>
                     <Sparkles className="h-4 w-4 mr-2" />
-                    Optimize Prompt
+                    Generate Prompt
                   </>
                 )}
               </Button>
@@ -170,6 +269,24 @@ Original Request: "${inputPrompt}"`;
                   >
                     <Download className="h-4 w-4 mr-2" />
                     Download
+                  </Button>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={handleSaveToVault}
+                    disabled={isSaving}
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                  >
+                    {isSaving ? (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                      </>
+                    )}
+                    {isSaving ? 'Saving...' : 'Save to Vault'}
                   </Button>
                 </div>
               </>
