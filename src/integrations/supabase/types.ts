@@ -38,6 +38,68 @@ export type Database = {
         }
         Relationships: []
       }
+      prompts: {
+        Row: {
+          id: string
+          user_id: string
+          original_prompt: string
+          generated_prompt: string
+          target_model: string
+          output_url: string | null
+          output_type: string | null
+          created_at: string
+          updated_at: string
+          title: string
+          content: string
+          category: string
+          tags: string[]
+          usage_count: number
+          starred: boolean
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          original_prompt: string
+          generated_prompt: string
+          target_model: string
+          output_url?: string | null
+          output_type?: string | null
+          created_at?: string
+          updated_at?: string
+          title: string
+          content: string
+          category: string
+          tags: string[]
+          usage_count?: number
+          starred?: boolean
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          original_prompt?: string
+          generated_prompt?: string
+          target_model?: string
+          output_url?: string | null
+          output_type?: string | null
+          created_at?: string
+          updated_at?: string
+          title?: string
+          content?: string
+          category?: string
+          tags?: string[]
+          usage_count?: number
+          starred?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prompts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       [_ in never]: never

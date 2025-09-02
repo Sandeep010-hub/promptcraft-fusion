@@ -38,13 +38,13 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         
         if (error) throw error;
         toast.success("Welcome back!");
-        onClose();
+        onClose(); // Close modal after successful login
       } else {
         const { error } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/`,
+            emailRedirectTo: `${window.location.origin}/dashboard`,
           },
         });
         

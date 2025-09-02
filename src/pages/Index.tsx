@@ -1,37 +1,19 @@
-import { useState, useEffect } from "react";
-import { User, Session } from "@supabase/supabase-js";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import PromptingIsAllYouNeed from "@/components/PromptingIsAllYouNeed";
 import { AuthModal } from "@/components/AuthModal";
-import { Dashboard } from "@/components/Dashboard";
-import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
-    );
-
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+  // If user is authenticated, redirect to dashboard
+  if (user) {
+    navigate('/dashboard');
+    return null;
+  }
 
   const handleCanvasClick = () => {
     if (!user) {
@@ -44,16 +26,11 @@ const Index = () => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="glass p-8 rounded-2xl flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 text-primary animate-spin" />
+          <div className="h-8 w-8 text-primary animate-spin">⏳</div>
           <p className="text-muted-foreground">Loading PromptCraft AI...</p>
         </div>
       </div>
     );
-  }
-
-  // Authenticated user - show Dashboard
-  if (user) {
-    return <Dashboard user={user} />;
   }
 
   // Unauthenticated user - show landing page

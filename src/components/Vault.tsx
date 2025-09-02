@@ -1,71 +1,119 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "@/hooks/use-toast";
 import { 
   Archive, 
   Search, 
-  Copy, 
+  Filter, 
+  Plus, 
+  Bookmark, 
   Star, 
   Clock, 
-  Tag,
-  Plus,
-  Bookmark,
-  Filter
+  Loader2,
+  X,
+  Save,
+  Copy,
+  Tag
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 
-// Mock data - replace with actual Supabase integration
-const mockPrompts = [
-  {
-    id: 1,
-    title: "Marketing Copy Generator",
-    content: "You are an expert marketing copywriter. Create compelling, conversion-focused copy for [product/service]. Focus on benefits, address pain points, and include a strong call-to-action...",
-    category: "Marketing",
-    tags: ["copywriting", "conversion", "sales"],
-    starred: true,
-    createdAt: "2024-01-15",
-    usageCount: 42
-  },
-  {
-    id: 2,
-    title: "Code Review Assistant",
-    content: "Act as a senior software engineer conducting a thorough code review. Analyze the provided code for bugs, performance issues, security vulnerabilities, and adherence to best practices...",
-    category: "Development",
-    tags: ["code-review", "programming", "best-practices"],
-    starred: false,
-    createdAt: "2024-01-10",
-    usageCount: 28
-  },
-  {
-    id: 3,
-    title: "Content Strategy Planner",
-    content: "You are a content strategist with 10+ years of experience. Help me create a comprehensive content strategy for [industry/niche]. Include content pillars, posting frequency, and engagement tactics...",
-    category: "Content",
-    tags: ["strategy", "content-marketing", "planning"],
-    starred: true,
-    createdAt: "2024-01-08",
-    usageCount: 35
-  }
-];
+interface Prompt {
+  id: string;
+  title: string;
+  content: string;
+  category: string;
+  tags: string[];
+  usage_count: number;
+  starred: boolean;
+  created_at: string;
+}
 
 export const Vault = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
-  const { toast } = useToast();
+  const categories = ['All', 'Creative Writing', 'Business', 'Technical', 'Education', 'Marketing', 'Personal'];
 
-  const categories = ["All", "Marketing", "Development", "Content", "Analysis", "Writing"];
-
-  const filteredPrompts = mockPrompts.filter(prompt => {
-    const matchesSearch = prompt.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         prompt.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         prompt.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    const matchesCategory = selectedCategory === "All" || prompt.category === selectedCategory;
-    
-    return matchesSearch && matchesCategory;
+  const [prompts, setPrompts] = useState<Prompt[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [totalPrompts, setTotalPrompts] = useState(0);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    title: '',
+    content: '',
+    category: 'Creative Writing',
+    tags: ''
   });
+  const [creating, setCreating] = useState(false);
+  const navigate = useNavigate();
+
+  // Load prompts on component mount and when filters change
+  useEffect(() => {
+    // Ensure we start with loading state
+    setLoading(true);
+    fetchPrompts();
+  }, [searchTerm, selectedCategory]);
+
+  // Fetch prompts from API
+  const fetchPrompts = async () => {
+    try {
+      setLoading(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to view your prompts.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Use Supabase Edge Function instead of relative URL
+      console.log('Vault - Calling Edge Function with:', { searchTerm, selectedCategory });
+      const { data, error } = await supabase.functions.invoke('get-prompts', {
+        body: {
+          search: searchTerm,
+          category: selectedCategory
+        }
+      });
+      console.log('Vault - Edge Function response:', { data, error });
+
+      if (error) {
+        console.error('Supabase function error:', error);
+        throw new Error(error.message || 'Failed to fetch prompts');
+      }
+
+      if (data) {
+        console.log('Vault - Received data:', data);
+        console.log('Vault - First prompt structure:', data.prompts?.[0]);
+        setPrompts(data.prompts || []);
+        setTotalPrompts(data.total || 0);
+      } else {
+        console.log('Vault - No data received');
+        setPrompts([]);
+        setTotalPrompts(0);
+      }
+    } catch (error) {
+      console.error('Error fetching prompts:', error);
+      toast({
+        title: "Failed to load prompts",
+        description: "There was an error loading your prompts. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePromptClick = (prompt: Prompt) => {
+    navigate(`/vault/${prompt.id}`);
+  };
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -73,6 +121,84 @@ export const Vault = () => {
       title: "Copied!",
       description: "Prompt copied to clipboard."
     });
+  };
+
+  const handleCreatePrompt = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreating(true);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to create prompts.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Parse tags from comma-separated string
+      const tags = createForm.tags
+        .split(',')
+        .map(tag => tag.trim())
+        .filter(tag => tag.length > 0);
+
+      // Create the prompt data
+      const promptData = {
+        title: createForm.title,
+        content: createForm.content,
+        category: createForm.category,
+        tags: tags,
+        user_id: session.user.id,
+        usage_count: 0,
+        starred: false,
+        original_prompt: createForm.content, // Required by current schema
+        generated_prompt: createForm.title,  // Required by current schema
+        target_model: 'gemini-1.5-flash'    // Required by current schema
+      };
+
+      // Insert into database
+      const { data, error } = await supabase
+        .from('prompts')
+        .insert([promptData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating prompt:', error);
+        throw new Error(error.message || 'Failed to create prompt');
+      }
+
+      // Add to local state
+      setPrompts(prev => [data, ...prev]);
+      setTotalPrompts(prev => prev + 1);
+
+      // Reset form and close modal
+      setCreateForm({
+        title: '',
+        content: '',
+        category: 'Creative Writing',
+        tags: ''
+      });
+      setShowCreateModal(false);
+
+      toast({
+        title: "Success!",
+        description: "Your prompt has been created and saved to the vault.",
+      });
+
+    } catch (error) {
+      console.error('Error creating prompt:', error);
+      toast({
+        title: "Failed to create prompt",
+        description: error instanceof Error ? error.message : "There was an error creating your prompt. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setCreating(false);
+    }
   };
 
   return (
@@ -106,7 +232,12 @@ export const Vault = () => {
               <Filter className="h-4 w-4 mr-2" />
               Filters
             </Button>
-            <Button variant="outline" size="sm" className="glass-hover">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="glass-hover"
+              onClick={() => setShowCreateModal(true)}
+            >
               <Plus className="h-4 w-4 mr-2" />
               New Prompt
             </Button>
@@ -135,7 +266,7 @@ export const Vault = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-2xl font-bold text-foreground">24</p>
+                <p className="text-2xl font-bold text-foreground">{totalPrompts}</p>
                 <p className="text-sm text-muted-foreground">Total Prompts</p>
               </div>
               <Bookmark className="h-8 w-8 text-primary/60" />
@@ -147,7 +278,7 @@ export const Vault = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-2xl font-bold text-foreground">8</p>
+                                 <p className="text-2xl font-bold text-foreground">{prompts ? prompts.filter(p => p.starred).length : 0}</p>
                 <p className="text-sm text-muted-foreground">Starred</p>
               </div>
               <Star className="h-8 w-8 text-primary/60" />
@@ -159,7 +290,7 @@ export const Vault = () => {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-2xl font-bold text-foreground">156</p>
+                                 <p className="text-2xl font-bold text-foreground">{prompts ? prompts.reduce((sum, p) => sum + p.usage_count, 0) : 0}</p>
                 <p className="text-sm text-muted-foreground">Total Uses</p>
               </div>
               <Clock className="h-8 w-8 text-primary/60" />
@@ -169,10 +300,20 @@ export const Vault = () => {
       </div>
 
       {/* Prompts Grid */}
-      <div className="grid gap-6">
-        {filteredPrompts.map((prompt) => (
-          <Card key={prompt.id} className="glass border-glass-border hover:border-primary/30 transition-all duration-300">
-            <CardHeader>
+       {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 text-primary animate-spin" />
+          <span className="ml-2 text-muted-foreground">Loading prompts...</span>
+        </div>
+      ) : (
+                 <div className="grid gap-6">
+           {prompts && prompts.length > 0 && prompts.map((prompt) => (
+            <Card 
+              key={prompt.id} 
+              className="glass border-glass-border hover:border-primary/30 transition-all duration-300 cursor-pointer"
+              onClick={() => handlePromptClick(prompt)}
+            >
+              <CardHeader>
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <CardTitle className="flex items-center gap-2">
@@ -185,22 +326,22 @@ export const Vault = () => {
                     </Badge>
                     <span className="text-xs text-muted-foreground flex items-center gap-1">
                       <Clock className="h-3 w-3" />
-                      {prompt.createdAt}
+                      {prompt.created_at}
                     </span>
-                    <span className="text-xs text-muted-foreground">
-                      Used {prompt.usageCount} times
-                    </span>
+                                         <span className="text-xs text-muted-foreground">
+                       Used {prompt.usage_count} times
+                     </span>
                   </div>
                 </div>
                 
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => copyToClipboard(prompt.content)}
-                  className="glass-hover"
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
+                                 <Button
+                   variant="ghost"
+                   size="sm"
+                   onClick={() => copyToClipboard(prompt.content)}
+                   className="glass-hover"
+                 >
+                   <Copy className="h-4 w-4" />
+                 </Button>
               </div>
             </CardHeader>
             
@@ -209,35 +350,145 @@ export const Vault = () => {
                 {prompt.content}
               </p>
               
-              <div className="flex items-center gap-2">
-                <Tag className="h-3 w-3 text-muted-foreground" />
-                <div className="flex gap-1 flex-wrap">
-                  {prompt.tags.map((tag) => (
-                    <Badge key={tag} variant="secondary" className="text-xs">
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
+                             <div className="flex items-center gap-2">
+                 <Tag className="h-3 w-3 text-muted-foreground" />
+                 <div className="flex gap-1 flex-wrap">
+                   {prompt.tags.map((tag) => (
+                     <Badge key={tag} variant="secondary" className="text-xs">
+                       {tag}
+                     </Badge>
+                   ))}
+                 </div>
+               </div>
             </CardContent>
           </Card>
         ))}
       </div>
+      )}
 
       {/* Empty State */}
-      {filteredPrompts.length === 0 && (
+      {!loading && prompts.length === 0 && (
         <div className="text-center py-12">
           <Archive className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-foreground mb-2">No prompts found</h3>
           <p className="text-muted-foreground mb-4">
             {searchTerm ? "Try adjusting your search terms" : "Start building your prompt collection"}
           </p>
-          <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
-            <Plus className="h-4 w-4 mr-2" />
-            Create Your First Prompt
-          </Button>
-        </div>
-      )}
-    </div>
-  );
-};
+                     <Button 
+             className="bg-primary hover:bg-primary/90 text-primary-foreground"
+             onClick={() => setShowCreateModal(true)}
+           >
+             <Plus className="h-4 w-4 mr-2" />
+             Create Your First Prompt
+           </Button>
+                 </div>
+       )}
+
+       {/* Create Prompt Modal */}
+       {showCreateModal && (
+         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+           <div className="glass w-full max-w-2xl p-6 rounded-2xl relative">
+             <div className="flex items-center justify-between mb-6">
+               <h2 className="text-2xl font-bold text-foreground">Create New Prompt</h2>
+               <Button
+                 variant="ghost"
+                 size="sm"
+                 onClick={() => setShowCreateModal(false)}
+                 className="hover:bg-destructive/10 hover:text-destructive"
+               >
+                 <X className="h-5 w-5" />
+               </Button>
+             </div>
+
+             <form onSubmit={handleCreatePrompt} className="space-y-4">
+               <div>
+                 <Label htmlFor="title" className="text-sm font-medium text-foreground">
+                   Prompt Title
+                 </Label>
+                 <Input
+                   id="title"
+                   value={createForm.title}
+                   onChange={(e) => setCreateForm({ ...createForm, title: e.target.value })}
+                   placeholder="Enter a descriptive title for your prompt"
+                   className="mt-1 glass border-glass-border focus:border-primary/50"
+                   required
+                 />
+               </div>
+
+               <div>
+                 <Label htmlFor="content" className="text-sm font-medium text-foreground">
+                   Prompt Content
+                 </Label>
+                 <Textarea
+                   id="content"
+                   value={createForm.content}
+                   onChange={(e) => setCreateForm({ ...createForm, content: e.target.value })}
+                   placeholder="Enter your prompt here..."
+                   className="mt-1 glass border-glass-border focus:border-primary/50 min-h-[120px]"
+                   required
+                 />
+               </div>
+
+               <div>
+                 <Label htmlFor="category" className="text-sm font-medium text-foreground">
+                   Category
+                 </Label>
+                 <select
+                   id="category"
+                   value={createForm.category}
+                   onChange={(e) => setCreateForm({ ...createForm, category: e.target.value })}
+                   className="mt-1 w-full px-3 py-2 bg-transparent border border-glass-border rounded-md focus:outline-none focus:border-primary/50 text-foreground"
+                 >
+                   {categories.filter(cat => cat !== 'All').map((category) => (
+                     <option key={category} value={category}>{category}</option>
+                   ))}
+                 </select>
+               </div>
+
+               <div>
+                 <Label htmlFor="tags" className="text-sm font-medium text-foreground">
+                   Tags (comma-separated)
+                 </Label>
+                 <Input
+                   id="tags"
+                   value={createForm.tags}
+                   onChange={(e) => setCreateForm({ ...createForm, tags: e.target.value })}
+                   placeholder="e.g., creative, writing, story"
+                   className="mt-1 glass border-glass-border focus:border-primary/50"
+                 />
+               </div>
+
+               <div className="flex gap-3 pt-4">
+                 <Button
+                   type="button"
+                   variant="outline"
+                   onClick={() => setShowCreateModal(false)}
+                   className="flex-1 glass-hover"
+                 >
+                   Cancel
+                 </Button>
+                 <Button
+                   type="submit"
+                   disabled={creating}
+                   className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
+                 >
+                   {creating ? (
+                     <>
+                       <Loader2 className="h-4 w-4 mr-3 animate-spin" />
+                       Creating...
+                     </>
+                   ) : (
+                     <>
+                       <Save className="h-4 w-4 mr-3" />
+                       Create Prompt
+                     </>
+                   )}
+                 </Button>
+               </div>
+             </form>
+           </div>
+         </div>
+       )}
+     </div>
+   );
+ };

@@ -92,4 +92,15 @@
   .glow-primary-hover:hover {
     box-shadow: 0 0 30px hsl(var(--primary) / 0.5);
   }
+  
+  /* Logo Text Styling */
+  .logo-text {
+    font-family: 'Inter', sans-serif;
+    font-weight: 700; /* Bold weight */
+    background-image: linear-gradient(to right, #E0E0E0, #00FFFF);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-fill-color: transparent;
+  }
 }
