@@ -1,73 +1,68 @@
-# Welcome to your Lovable project
+# PromptCraft AI
+An intelligent, full-stack web application designed for modern AI-powered workflows, providing a centralized platform for generating, managing, and storing AI prompts and their multimedia outputs.
 
-## Project info
+Live Demo: https://promptcraft-fusion.netlify.app/
 
-**URL**: https://lovable.dev/projects/913bf6fb-b4a0-42c7-bb7e-0b57f017fa28
+## Overview
+PromptCraft AI is a sophisticated tool built to solve a critical challenge in the age of generative AI: the management of the creative process. As AI models become more powerful, the art of crafting the perfect prompt—and tracking its results—becomes paramount. This application provides a seamless, secure, and user-centric environment for prompt engineering, moving beyond simple text notes to a rich, interactive vault.
 
-## How can I edit this code?
+The platform features a real-time prompt optimization engine powered by the Google Gemini API, secure user authentication via Supabase, and a personal "Vault" where users can save prompts and link them directly to their multimedia outputs, such as images, videos, or documents.
 
-There are several ways of editing your application.
+## Key Features
+- **AI-Powered Prompt Generation:** Leverages the Google Gemini API to intelligently refine and expand user ideas into powerful, model-specific prompts.
+- **Secure User Authentication:** Full authentication system built with Supabase, including email/password sign-up and secure session management.
+- **Personal Prompt Vault:** A private, user-specific database to save, search, and categorize every generated prompt.
+- **Multimedia Output Storage:** Users can upload and link a prompt's result (images, videos, etc.) directly to the prompt that created it, creating a complete record of their creative workflow.
+- **Modern, Responsive UI:** A sleek, professional user interface built with React, TypeScript, and Tailwind CSS, featuring a collapsible sidebar and a "glassmorphism" design aesthetic.
+- **Serverless Backend:** The entire backend is powered by secure, scalable Supabase Edge Functions, ensuring a robust and modern architecture.
 
-**Use Lovable**
+## Technology Stack
+This project is built with a modern, full-stack, serverless architecture:
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/913bf6fb-b4a0-42c7-bb7e-0b57f017fa28) and start prompting.
+### Frontend:
+- **Vite:** High-performance tooling for modern web development.
+- **React:** A declarative library for building user interfaces.
+- **TypeScript:** Strongly typed programming language that builds on JavaScript.
+- **Tailwind CSS:** A utility-first CSS framework for rapid UI development.
+- **shadcn/ui:** Re-usable components built using Radix UI and Tailwind CSS.
 
-Changes made via Lovable will be committed automatically to this repo.
+### Backend & Infrastructure:
+- **Supabase:** The open-source Firebase alternative.
+- **Authentication:** Secure user management and row-level security.
+- **Postgres Database:** For storing user data and prompts.
+- **Storage:** For handling multimedia file uploads.
+- **Edge Functions:** Deno-based serverless functions for secure backend logic.
 
-**Use your preferred IDE**
+### AI Integration:
+- **Google Gemini API:** Powering the intelligent prompt generation engine.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## Local Development Setup
+To run this project on your local machine, please follow these steps.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Prerequisites:
+- Node.js (v18 or higher)
+- Supabase CLI
 
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/913bf6fb-b4a0-42c7-bb7e-0b57f017fa28) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+1. **Clone the Repository**
+   ```
+   git clone <YOUR_GIT_REPOSITORY_URL>
+   cd promptcraft-fusion
+   ```
+2. **Install Dependencies**
+   ```
+   npm install
+   ```
+3. **Set Up Environment Variables**
+   Create a new file named `.env.local` in the root of your project.
+   
+   You will need to get your project-specific keys from your Supabase Dashboard (Settings > API).
+   
+   Add the following variables to your `.env.local` file:
+   ```
+   VITE_SUPABASE_URL="https://<your-project-id>.supabase.co"
+   VITE_SUPABASE_ANON_KEY="<your-supabase-anon-key>"
+   ```
+4. **Run the Development Server**
+   ```
+   npm run dev
+   ```
