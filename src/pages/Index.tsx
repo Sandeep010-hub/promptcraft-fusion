@@ -2,14 +2,16 @@ import { useState, useEffect } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import PromptingIsAllYouNeed from "@/components/PromptingIsAllYouNeed";
 import { AuthModal } from "@/components/AuthModal";
+import { Dashboard } from "@/components/Dashboard";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { LogOut, User as UserIcon } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 const Index = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Set up auth state listener
@@ -17,6 +19,7 @@ const Index = () => {
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
+        setLoading(false);
       }
     );
 
@@ -24,6 +27,7 @@ const Index = () => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
@@ -35,10 +39,24 @@ const Index = () => {
     }
   };
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-  };
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="glass p-8 rounded-2xl flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 text-primary animate-spin" />
+          <p className="text-muted-foreground">Loading PromptCraft AI...</p>
+        </div>
+      </div>
+    );
+  }
 
+  // Authenticated user - show Dashboard
+  if (user) {
+    return <Dashboard user={user} />;
+  }
+
+  // Unauthenticated user - show landing page
   return (
     <div className="relative min-h-screen overflow-hidden">
       {/* Interactive Background */}
@@ -60,28 +78,9 @@ const Index = () => {
           </div>
         </div>
 
-        {user && (
-          <div className="absolute top-8 right-8 pointer-events-auto">
-            <div className="glass px-4 py-2 rounded-full flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <UserIcon className="h-4 w-4 text-primary" />
-                <span className="text-sm text-foreground">{user.email}</span>
-              </div>
-              <Button
-                variant="glass"
-                size="sm"
-                onClick={handleSignOut}
-                className="glass-hover"
-              >
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        )}
-
         <div className="absolute bottom-8 right-8">
           <div className="glass px-4 py-2 rounded-lg text-sm text-muted-foreground">
-            {user ? "Welcome to PromptCraft AI" : "Click anywhere to begin"}
+            Click anywhere to begin
           </div>
         </div>
       </div>
