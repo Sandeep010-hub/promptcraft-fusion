@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Github } from "lucide-react";
+import { X, Github, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -15,16 +17,61 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Authentication logic will be implemented after Supabase connection
-    console.log(`${mode} attempt:`, { email, password });
+    
+    if (mode === "signup" && password !== confirmPassword) {
+      toast.error("Passwords don't match");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      if (mode === "login") {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        
+        if (error) throw error;
+        toast.success("Welcome back!");
+        onClose();
+      } else {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/`,
+          },
+        });
+        
+        if (error) throw error;
+        toast.success("Account created! Please check your email to verify your account.");
+        onClose();
+      }
+    } catch (error: any) {
+      toast.error(error.message || "An error occurred");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSocialLogin = (provider: "google" | "github") => {
-    // Social login logic will be implemented after Supabase connection
-    console.log(`${provider} login`);
+  const handleSocialLogin = async (provider: "google" | "github") => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}/`,
+        },
+      });
+      
+      if (error) throw error;
+    } catch (error: any) {
+      toast.error(error.message || "An error occurred");
+    }
   };
 
   return (
@@ -113,8 +160,16 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 type="submit"
                 variant="primary"
                 className="w-full glow-primary-hover"
+                disabled={loading}
               >
-                {mode === "login" ? "Login Securely" : "Create Account"}
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {mode === "login" ? "Signing in..." : "Creating account..."}
+                  </>
+                ) : (
+                  mode === "login" ? "Login Securely" : "Create Account"
+                )}
               </Button>
             </form>
 
