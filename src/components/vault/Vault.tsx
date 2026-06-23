@@ -148,24 +148,15 @@ export const Vault = () => {
         .map(tag => tag.trim())
         .filter(tag => tag.length > 0);
 
-      // Create the prompt data
-      const promptData = {
-        title: createForm.title,
-        content: createForm.content,
-        category: createForm.category,
-        tags: tags,
-        user_id: session.user.id,
-        usage_count: 0,
-        starred: false,
-        original_prompt: createForm.content, // Required by current schema
-        generated_prompt: createForm.title,  // Required by current schema
-        target_model: 'gemini-1.5-flash'    // Required by current schema
-      };
-
-      // Insert into database
+      // Insert into database mapping to our schema
       const { data, error } = await supabase
         .from('prompts')
-        .insert([promptData])
+        .insert([{
+          user_id: session.user.id,
+          original_prompt: createForm.title,
+          generated_prompt: createForm.content,
+          target_model: createForm.category
+        }])
         .select()
         .single();
 
@@ -174,8 +165,20 @@ export const Vault = () => {
         throw new Error(error.message || 'Failed to create prompt');
       }
 
+      // Transform response to match frontend Prompt interface
+      const newPrompt: Prompt = {
+        id: data.id,
+        title: data.original_prompt,
+        content: data.generated_prompt,
+        category: data.target_model,
+        tags: [data.target_model],
+        usage_count: data.usage_count || 1,
+        starred: data.starred || false,
+        created_at: new Date(data.created_at).toLocaleDateString(),
+      };
+
       // Add to local state
-      setPrompts(prev => [data, ...prev]);
+      setPrompts(prev => [newPrompt, ...prev]);
       setTotalPrompts(prev => prev + 1);
 
       // Reset form and close modal
