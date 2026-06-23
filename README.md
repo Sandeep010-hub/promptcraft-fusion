@@ -2,7 +2,7 @@
 
 A professional, full-stack environment for prompt engineering, management, and optimization.
 
-**Live Demo:** [https://promptgenitics.netlify.app/](https://promptgenitics.netlify.app/)
+**Live Demo:** [https://promptcraft-fusion.netlify.app/](https://promptcraft-fusion.netlify.app/)
 
 ## System Architecture
 
