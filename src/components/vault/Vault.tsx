@@ -156,7 +156,7 @@ export const Vault = () => {
           original_prompt: createForm.title,
           generated_prompt: createForm.content,
           target_model: createForm.category
-        }])
+        }] as any)
         .select()
         .single();
 
