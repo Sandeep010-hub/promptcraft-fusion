@@ -1,5 +1,6 @@
 /// <reference types="https://esm.sh/@supabase/functions-js/src/edge-runtime.d.ts" />
 
+// @ts-nocheck
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
@@ -15,8 +16,8 @@ serve(async (req) => {
 
   try {
     const supabaseAdmin = createClient(
-      Deno.env.get('PROJECT_URL') ?? '',
-      Deno.env.get('SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
     const authHeader = req.headers.get('Authorization');
@@ -60,7 +61,7 @@ serve(async (req) => {
 
     // --- THIS IS THE FIX ---
     // Transform the database data into the rich format the frontend expects
-    const transformedPrompts = prompts.map(prompt => ({
+    const transformedPrompts = (prompts || []).map((prompt: any) => ({
       id: prompt.id,
       title: prompt.original_prompt, // Use original_prompt as title
       content: prompt.generated_prompt,
@@ -79,9 +80,10 @@ serve(async (req) => {
       status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error in get-prompts function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }

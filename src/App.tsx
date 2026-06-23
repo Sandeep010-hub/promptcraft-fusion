@@ -5,9 +5,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import { PromptDetail } from "./components/PromptDetail";
-import { Dashboard } from "./components/Dashboard";
-import { ProtectedRoute } from "./components/ProtectedRoute";
+import { PromptDetail } from "./components/vault/PromptDetail";
+import { Dashboard } from "./components/dashboard/Dashboard";
+import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { AuthProvider } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
@@ -18,7 +18,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <Routes>
             {/* Public route - Landing page */}
             <Route path="/" element={<Index />} />

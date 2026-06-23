@@ -26,9 +26,8 @@ interface PromptDetail {
   category: string;
   tags: string[];
   starred: boolean;
-  createdAt: string;
-  usageCount: number;
-  originalPrompt: string;
+  created_at: string;
+  usage_count: number;
   outputUrl?: string;
   outputType?: string;
 }
@@ -41,11 +40,13 @@ export const PromptDetail = () => {
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const { toast } = useToast();
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
   useEffect(() => {
     if (promptId) {
       fetchPromptDetail();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [promptId]);
 
   const fetchPromptDetail = async () => {
@@ -63,18 +64,13 @@ export const PromptDetail = () => {
         return;
       }
 
-      const response = await fetch(`/functions/v1/get-prompts`, {
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        }
+      const { data, error } = await supabase.functions.invoke('get-prompts', {
+        body: {}
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch prompts');
+      if (error) {
+        throw new Error(error.message || 'Failed to fetch prompts');
       }
-
-      const data = await response.json();
       const foundPrompt = data.prompts.find((p: PromptDetail) => p.id === promptId);
       
       if (!foundPrompt) {
@@ -83,7 +79,7 @@ export const PromptDetail = () => {
           description: "The requested prompt could not be found.",
           variant: "destructive"
         });
-        navigate('/vault');
+        navigate('/dashboard#vault');
         return;
       }
 
@@ -134,7 +130,8 @@ export const PromptDetail = () => {
       formData.append('file', selectedFile);
       formData.append('promptId', prompt.id);
 
-      const response = await fetch('/functions/v1/upload-output', {
+      // Need to use standard fetch for FormData since invoke() doesn't support it directly
+      const response = await fetch(`${supabaseUrl}/functions/v1/upload-output`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
@@ -208,7 +205,7 @@ export const PromptDetail = () => {
         <div className="text-center py-12">
           <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-foreground mb-2">Prompt not found</h3>
-          <Button onClick={() => navigate('/vault')}>
+          <Button onClick={() => navigate('/dashboard#vault')}>
             Back to Vault
           </Button>
         </div>
@@ -217,36 +214,36 @@ export const PromptDetail = () => {
   }
 
   return (
-    <div className="flex-1 p-8 max-w-7xl mx-auto w-full">
+    <div className="flex-1 p-4 sm:p-8 max-w-7xl mx-auto w-full overflow-x-hidden">
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-4 mb-6">
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate('/vault')}
+            onClick={() => navigate('/dashboard#vault')}
             className="glass-hover"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Vault
           </Button>
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold text-foreground">{prompt.title}</h1>
-            <p className="text-muted-foreground">Prompt details and outputs</p>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground truncate">{prompt.title}</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">Prompt details and outputs</p>
           </div>
         </div>
 
         {/* Prompt Info */}
-        <div className="flex items-center gap-4 mb-4">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4 mb-4">
           <Badge variant="outline" className="glass-hover">
             {prompt.category}
           </Badge>
           <span className="text-sm text-muted-foreground flex items-center gap-1">
             <Clock className="h-3 w-3" />
-            {prompt.createdAt}
+            {prompt.created_at}
           </span>
           <span className="text-sm text-muted-foreground">
-            Used {prompt.usageCount} times
+            Used {prompt.usage_count} times
           </span>
         </div>
       </div>
@@ -263,14 +260,14 @@ export const PromptDetail = () => {
           <CardContent className="space-y-4">
             <div className="glass border-glass-border rounded-lg p-4">
               <p className="text-sm text-foreground whitespace-pre-wrap">
-                {prompt.originalPrompt}
+                {prompt.title}
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => copyToClipboard(prompt.originalPrompt)}
+                onClick={() => copyToClipboard(prompt.title)}
                 className="glass-hover"
               >
                 <Copy className="h-4 w-4 mr-2" />
@@ -279,7 +276,7 @@ export const PromptDetail = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => downloadPrompt(prompt.originalPrompt, 'original-prompt.txt')}
+                onClick={() => downloadPrompt(prompt.title, 'original-prompt.txt')}
                 className="glass-hover"
               >
                 <Download className="h-4 w-4 mr-2" />
@@ -303,7 +300,7 @@ export const PromptDetail = () => {
                 {prompt.content}
               </pre>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Button
                 variant="outline"
                 size="sm"
@@ -368,7 +365,7 @@ export const PromptDetail = () => {
               </p>
             </div>
             
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-4">
               <Input
                 id="file-upload"
                 type="file"

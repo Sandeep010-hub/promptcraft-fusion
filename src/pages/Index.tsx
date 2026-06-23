@@ -1,18 +1,16 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import PromptingIsAllYouNeed from "@/components/PromptingIsAllYouNeed";
-import { AuthModal } from "@/components/AuthModal";
+import { Navigate } from "react-router-dom";
+import PromptingIsAllYouNeed from "@/components/landing/PromptingIsAllYouNeed";
+import { AuthModal } from "@/components/auth/AuthModal";
 import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { user, loading } = useAuth();
-  const navigate = useNavigate();
 
   // If user is authenticated, redirect to dashboard
   if (user) {
-    navigate('/dashboard');
-    return null;
+    return <Navigate to="/dashboard" replace />;
   }
 
   const handleCanvasClick = () => {
@@ -47,7 +45,7 @@ const Index = () => {
 
       {/* Floating UI Elements */}
       <div className="relative z-10 pointer-events-none">
-        <div className="absolute top-8 left-8">
+        <div className="absolute top-4 left-4 sm:top-8 sm:left-8">
           <div className="glass px-6 py-3 rounded-full">
             <h1 className="text-xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
               PromptCraft AI
@@ -55,7 +53,7 @@ const Index = () => {
           </div>
         </div>
 
-        <div className="absolute bottom-8 right-8">
+        <div className="absolute bottom-4 right-4 sm:bottom-8 sm:right-8">
           <div className="glass px-4 py-2 rounded-lg text-sm text-muted-foreground">
             Click anywhere to begin
           </div>

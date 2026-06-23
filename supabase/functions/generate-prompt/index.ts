@@ -1,3 +1,4 @@
+// @ts-nocheck
 /// <reference types="https://esm.sh/@supabase/functions-js/src/edge-runtime.d.ts" />
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
@@ -43,7 +44,7 @@ serve(async (req) => {
     }
     // ----------------------------
 
-    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`;
+    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`;
 
     const geminiResponse = await fetch(API_URL, {
       method: 'POST',
@@ -66,7 +67,7 @@ serve(async (req) => {
 
     // --- FINAL CLEANUP STEP ---
     // This removes any lingering markdown, just in case.
-    const cleanedPrompt = rawPrompt.replace(/[`\*#]/g, '').trim();
+    const cleanedPrompt = rawPrompt.replace(/[`*#]/g, '').trim();
     // ------------------------
 
     return new Response(

@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -8,7 +8,6 @@ interface ProtectedRouteProps {
 
 export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { user, session, loading } = useAuth();
-  const navigate = useNavigate();
 
   // Show loading spinner while checking auth state
   if (loading) {
@@ -24,8 +23,7 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   // If no user session, redirect to landing page
   if (!user || !session) {
-    navigate('/');
-    return null;
+    return <Navigate to="/" replace />;
   }
 
   // User is authenticated, render protected content

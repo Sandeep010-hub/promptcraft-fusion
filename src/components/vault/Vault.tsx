@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { 
   Archive, 
@@ -22,6 +23,7 @@ import {
   Copy,
   Tag
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Prompt {
   id: string;
@@ -57,6 +59,7 @@ export const Vault = () => {
     // Ensure we start with loading state
     setLoading(true);
     fetchPrompts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm, selectedCategory]);
 
   // Fetch prompts from API
@@ -202,40 +205,43 @@ export const Vault = () => {
   };
 
   return (
-    <div className="flex-1 p-8 max-w-7xl mx-auto w-full">
+    <div className="flex-1 p-4 sm:p-8 max-w-7xl mx-auto w-full relative z-10 overflow-x-hidden">
       {/* Header */}
-      <div className="mb-8">
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="mb-8"
+      >
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
-            <Archive className="h-6 w-6 text-primary" />
+          <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center border border-primary/30 shadow-[0_0_15px_rgba(0,255,255,0.3)]">
+            <Archive className="h-6 w-6 text-primary drop-shadow-[0_0_5px_rgba(0,255,255,0.8)]" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Prompt Vault</h1>
-            <p className="text-muted-foreground">Your collection of optimized AI prompts</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">Prompt Vault</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">Your collection of optimized AI prompts</p>
           </div>
         </div>
 
         {/* Search and Filters */}
         <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <div className="relative flex-1 group">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
             <Input
-              placeholder="Search prompts, tags, or categories..."
+              placeholder="Search prompts, tags..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 glass border-glass-border focus:border-primary/50"
+              className="pl-11 h-12 w-full bg-black/40 border-white/10 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 shadow-inner rounded-xl transition-all"
             />
           </div>
           
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="glass-hover">
+            <Button variant="outline" className="h-12 bg-black/40 border-white/10 hover:bg-white/10 rounded-xl">
               <Filter className="h-4 w-4 mr-2" />
               Filters
             </Button>
             <Button 
-              variant="outline" 
-              size="sm" 
-              className="glass-hover"
+              className="h-12 bg-primary hover:bg-primary/90 text-primary-foreground shadow-glow rounded-xl px-6"
               onClick={() => setShowCreateModal(true)}
             >
               <Plus className="h-4 w-4 mr-2" />
@@ -245,125 +251,157 @@ export const Vault = () => {
         </div>
 
         {/* Category Filters */}
-        <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
+        <div className="flex gap-2 mt-6 overflow-x-auto pb-2 custom-scrollbar">
           {categories.map((category) => (
             <Button
               key={category}
               variant={selectedCategory === category ? "default" : "outline"}
               size="sm"
               onClick={() => setSelectedCategory(category)}
-              className={selectedCategory === category ? "bg-primary text-primary-foreground" : "glass-hover"}
+              className={`rounded-full px-4 border-white/10 ${selectedCategory === category ? "bg-primary text-primary-foreground shadow-glow border-primary/50" : "bg-black/40 hover:bg-white/10"}`}
             >
               {category}
             </Button>
           ))}
         </div>
-      </div>
+      </motion.div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <Card className="glass border-glass-border">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+        className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
+      >
+        <Card className="bg-black/40 border-white/10 backdrop-blur-xl shadow-subtle hover:border-primary/30 transition-colors rounded-2xl relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-[50px] -mr-16 -mt-16 group-hover:bg-primary/20 transition-colors" />
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-2xl font-bold text-foreground">{totalPrompts}</p>
-                <p className="text-sm text-muted-foreground">Total Prompts</p>
+                <p className="text-3xl font-bold text-foreground mb-1">{totalPrompts}</p>
+                <p className="text-sm text-muted-foreground font-medium">Total Prompts</p>
               </div>
-              <Bookmark className="h-8 w-8 text-primary/60" />
+              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
+                <Bookmark className="h-6 w-6 text-primary" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="glass border-glass-border">
+        <Card className="bg-black/40 border-white/10 backdrop-blur-xl shadow-subtle hover:border-primary/30 transition-colors rounded-2xl relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-400/10 rounded-full blur-[50px] -mr-16 -mt-16 group-hover:bg-yellow-400/20 transition-colors" />
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                                 <p className="text-2xl font-bold text-foreground">{prompts ? prompts.filter(p => p.starred).length : 0}</p>
-                <p className="text-sm text-muted-foreground">Starred</p>
+                 <p className="text-3xl font-bold text-foreground mb-1">{prompts ? prompts.filter(p => p.starred).length : 0}</p>
+                <p className="text-sm text-muted-foreground font-medium">Starred</p>
               </div>
-              <Star className="h-8 w-8 text-primary/60" />
+              <div className="w-12 h-12 rounded-xl bg-yellow-400/10 flex items-center justify-center border border-yellow-400/20">
+                <Star className="h-6 w-6 text-yellow-400" />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="glass border-glass-border">
+        <Card className="bg-black/40 border-white/10 backdrop-blur-xl shadow-subtle hover:border-primary/30 transition-colors rounded-2xl relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-[50px] -mr-16 -mt-16 group-hover:bg-purple-500/20 transition-colors" />
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                                 <p className="text-2xl font-bold text-foreground">{prompts ? prompts.reduce((sum, p) => sum + p.usage_count, 0) : 0}</p>
-                <p className="text-sm text-muted-foreground">Total Uses</p>
+                 <p className="text-3xl font-bold text-foreground mb-1">{prompts ? prompts.reduce((sum, p) => sum + p.usage_count, 0) : 0}</p>
+                <p className="text-sm text-muted-foreground font-medium">Total Uses</p>
               </div>
-              <Clock className="h-8 w-8 text-primary/60" />
+              <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center border border-purple-500/20">
+                <Clock className="h-6 w-6 text-purple-400" />
+              </div>
             </div>
           </CardContent>
         </Card>
-      </div>
+      </motion.div>
 
       {/* Prompts Grid */}
        {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 text-primary animate-spin" />
-          <span className="ml-2 text-muted-foreground">Loading prompts...</span>
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-10 w-10 text-primary animate-spin mb-4 drop-shadow-[0_0_10px_rgba(0,255,255,0.8)]" />
         </div>
       ) : (
-                 <div className="grid gap-6">
-           {prompts && prompts.length > 0 && prompts.map((prompt) => (
-            <Card 
-              key={prompt.id} 
-              className="glass border-glass-border hover:border-primary/30 transition-all duration-300 cursor-pointer"
-              onClick={() => handlePromptClick(prompt)}
+         <motion.div 
+           initial={{ opacity: 0 }}
+           animate={{ opacity: 1 }}
+           transition={{ duration: 0.5, delay: 0.2 }}
+           className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6"
+         >
+           {prompts && prompts.length > 0 && prompts.map((prompt, i) => (
+            <motion.div
+              key={prompt.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: i * 0.05 }}
+              whileHover={{ y: -5, transition: { duration: 0.2 } }}
             >
-              <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <CardTitle className="flex items-center gap-2">
-                    {prompt.starred && <Star className="h-4 w-4 text-yellow-400 fill-current" />}
-                    {prompt.title}
-                  </CardTitle>
-                  <div className="flex items-center gap-4 mt-2">
-                    <Badge variant="outline" className="glass-hover">
-                      {prompt.category}
-                    </Badge>
-                    <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      {prompt.created_at}
-                    </span>
-                                         <span className="text-xs text-muted-foreground">
-                       Used {prompt.usage_count} times
-                     </span>
+              <Card 
+                className="bg-black/40 border-white/10 hover:border-primary/50 transition-colors duration-300 cursor-pointer rounded-2xl overflow-hidden h-full flex flex-col group shadow-subtle hover:shadow-glow"
+                onClick={() => handlePromptClick(prompt)}
+              >
+                <CardHeader className="pb-3 border-b border-white/5 bg-white/[0.02]">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1 pr-4">
+                    <CardTitle className="flex items-center gap-2 text-lg leading-tight group-hover:text-primary transition-colors">
+                      {prompt.starred && <Star className="h-4 w-4 text-yellow-400 fill-current drop-shadow-[0_0_5px_rgba(250,204,21,0.8)] shrink-0" />}
+                      <span className="line-clamp-2">{prompt.title}</span>
+                    </CardTitle>
+                    <div className="flex items-center gap-3 mt-3">
+                      <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                        {prompt.category}
+                      </Badge>
+                      <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {new Date(prompt.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
                   </div>
+                  
+                  <Button
+                     variant="ghost"
+                     size="icon"
+                     onClick={(e) => { e.stopPropagation(); copyToClipboard(prompt.content); }}
+                     className="h-8 w-8 rounded-full bg-white/5 hover:bg-primary hover:text-primary-foreground border border-white/10 opacity-0 group-hover:opacity-100 transition-all shadow-glass"
+                   >
+                     <Copy className="h-3.5 w-3.5" />
+                   </Button>
                 </div>
-                
-                                 <Button
-                   variant="ghost"
-                   size="sm"
-                   onClick={() => copyToClipboard(prompt.content)}
-                   className="glass-hover"
-                 >
-                   <Copy className="h-4 w-4" />
-                 </Button>
-              </div>
-            </CardHeader>
-            
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
-                {prompt.content}
-              </p>
+              </CardHeader>
               
-                             <div className="flex items-center gap-2">
-                 <Tag className="h-3 w-3 text-muted-foreground" />
-                 <div className="flex gap-1 flex-wrap">
-                   {prompt.tags.map((tag) => (
-                     <Badge key={tag} variant="secondary" className="text-xs">
-                       {tag}
-                     </Badge>
-                   ))}
+              <CardContent className="pt-4 flex-1 flex flex-col">
+                <p className="text-sm text-muted-foreground mb-4 line-clamp-4 leading-relaxed flex-1">
+                  {prompt.content}
+                </p>
+                
+                <div className="flex items-center justify-between pt-4 border-t border-white/5 mt-auto">
+                   <div className="flex items-center gap-2 overflow-hidden">
+                     <Tag className="h-3.5 w-3.5 text-primary/50 shrink-0" />
+                     <div className="flex gap-1.5 flex-wrap">
+                       {prompt.tags.slice(0, 3).map((tag) => (
+                         <Badge key={tag} variant="secondary" className="text-[10px] bg-white/5 hover:bg-white/10 px-2 py-0.5">
+                           {tag}
+                         </Badge>
+                       ))}
+                       {prompt.tags.length > 3 && (
+                         <Badge variant="secondary" className="text-[10px] bg-white/5 px-2 py-0.5">
+                           +{prompt.tags.length - 3}
+                         </Badge>
+                       )}
+                     </div>
+                   </div>
+                   <span className="text-[11px] font-medium text-muted-foreground bg-white/5 px-2 py-1 rounded-md shrink-0">
+                     {prompt.usage_count} uses
+                   </span>
                  </div>
-               </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+           </motion.div>
         ))}
-      </div>
+      </motion.div>
       )}
 
       {/* Empty State */}
@@ -433,16 +471,21 @@ export const Vault = () => {
                  <Label htmlFor="category" className="text-sm font-medium text-foreground">
                    Category
                  </Label>
-                 <select
-                   id="category"
-                   value={createForm.category}
-                   onChange={(e) => setCreateForm({ ...createForm, category: e.target.value })}
-                   className="mt-1 w-full px-3 py-2 bg-transparent border border-glass-border rounded-md focus:outline-none focus:border-primary/50 text-foreground"
-                 >
-                   {categories.filter(cat => cat !== 'All').map((category) => (
-                     <option key={category} value={category}>{category}</option>
-                   ))}
-                 </select>
+                  <Select
+                    value={createForm.category}
+                    onValueChange={(value) => setCreateForm({ ...createForm, category: value })}
+                  >
+                    <SelectTrigger id="category" className="mt-1 w-full glass border-glass-border focus:border-primary/50">
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.filter(cat => cat !== 'All').map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                </div>
 
                <div>
@@ -458,33 +501,33 @@ export const Vault = () => {
                  />
                </div>
 
-               <div className="flex gap-3 pt-4">
-                 <Button
-                   type="button"
-                   variant="outline"
-                   onClick={() => setShowCreateModal(false)}
-                   className="flex-1 glass-hover"
-                 >
-                   Cancel
-                 </Button>
-                 <Button
-                   type="submit"
-                   disabled={creating}
-                   className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
-                 >
-                   {creating ? (
-                     <>
-                       <Loader2 className="h-4 w-4 mr-3 animate-spin" />
-                       Creating...
-                     </>
-                   ) : (
-                     <>
-                       <Save className="h-4 w-4 mr-3" />
-                       Create Prompt
-                     </>
-                   )}
-                 </Button>
-               </div>
+                <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowCreateModal(false)}
+                    className="flex-1 glass-hover"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={creating}
+                    className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground"
+                  >
+                    {creating ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Creating...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                        Create Prompt
+                      </>
+                    )}
+                  </Button>
+                </div>
              </form>
            </div>
          </div>

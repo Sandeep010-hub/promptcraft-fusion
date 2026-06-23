@@ -40,7 +40,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         toast.success("Welcome back!");
         onClose(); // Close modal after successful login
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -49,11 +49,18 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
         });
         
         if (error) throw error;
+        
+        // Supabase returns an empty identities array if the email already exists 
+        // (to prevent email enumeration by default, but we want to show an error)
+        if (data.user && data.user.identities && data.user.identities.length === 0) {
+          throw new Error("An account with this email already exists. Please login instead.");
+        }
+
         toast.success("Account created! Please check your email to verify your account.");
         onClose();
       }
-    } catch (error: any) {
-      toast.error(error.message || "An error occurred");
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "An error occurred");
     } finally {
       setLoading(false);
     }
@@ -64,13 +71,13 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo: `${window.location.origin}/dashboard`,
         },
       });
       
       if (error) throw error;
-    } catch (error: any) {
-      toast.error(error.message || "An error occurred");
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "An error occurred");
     }
   };
 
